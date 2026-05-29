@@ -1,8 +1,10 @@
-# Allele size association — neurodegen STRs
+# =============================================================================
+# Allele Size Association — Neurodegenerative STRs
+# =============================================================================
 # Gabrielle Altman, adapted from code by Bharati Jadhav
 #
 # For each TR locus nominally significant in METAL, tests association between
-# long-allele size (binary at each cutoff >= 99th pctile) and disease status
+# long-allele size (binary at each cutoff >= 99th percentile) and disease status
 # using Firth logistic regression (brglm). Run per chromosome.
 # Similar script used in AoU with different covariates.
 #
@@ -10,6 +12,19 @@
 #   Rscript alleleSizeAssociation.neuroDegen.R \
 #     --dir <dir> --cohort neuroDegen --chrom chr12 \
 #     --pheno_file phenos.txt --covar_file covars.tsv --metal_file metal.xlsx
+#
+# Arguments   :
+#   --dir        Main project directory
+#   --cohort     Phenotype label (e.g. neuroDegen | neuroDegen_noPDorAD)
+#   --chrom      Chromosome: chr1 ... chr22
+#   --pheno_file Path to phenotype file
+#   --covar_file Path to covariates file
+#   --metal_file Path to METAL results xlsx
+#
+# Dependencies: tidyverse, data.table, scales, argparser, R.utils,
+#               readxl, parallel, brglm
+#
+# ============================================================================
 
 cat(paste0("R version: ", getRversion(), "\n"))
 cat("Loading libraries...\n")
@@ -128,7 +143,9 @@ gc()
 
 eh$Locus <- as.character(eh$Locus)
 
-## helpers
+# =============================================================================
+# Functions
+# =============================================================================
 
 make_allele_bins <- function(repeat_len, df) {
   df %>% mutate(
@@ -137,6 +154,7 @@ make_allele_bins <- function(repeat_len, df) {
   )
 }
 
+# Firth logistic regression for one repeat-length cutoff
 run_binary_regression <- function(repeat_len, dt) {
   dt$Phenotype    <- relevel(factor(dt$Phenotype),    ref = "0")
   dt$RepeatStatus <- relevel(factor(dt$RepeatStatus), ref = "0")
@@ -223,6 +241,10 @@ test_locus <- function(marker) {
     best = assoc[which.min(assoc$LR_Pval), ]
   )
 }
+
+# =============================================================================
+# Run association tests across all loci
+# =============================================================================
 
 loci <- unique(eh$Locus)
 cat(paste0("Running association tests for ", length(loci), " loci...\n"))

@@ -51,7 +51,11 @@ fix_psam_header() {
 }
 
 # merge TR pgen + locus SNP pgen, restricted to shared samples
-# optional 5th arg: SNP extract list (fine-mapping uses top-100; conditional uses all)
+# 
+# Args: TR PHENO THRESH OUT_PREFIX [SNP_EXTRACT_LIST]
+#   If SNP_EXTRACT_LIST is given, only those SNP IDs are kept from the locus
+#   PGEN before merging. (Fine-mapping wants the top-100 list; the
+#   conditional analysis wants all locus SNPs.)
 build_tr_snp_merged_pgen() {
     local tr="$1" pheno="$2" thresh="$3" out_prefix="$4"
     local snp_extract_list="${5:-}"
@@ -101,6 +105,10 @@ build_tr_snp_merged_pgen() {
     rm -f "${out_prefix}_TR".{bed,bim,fam} "${out_prefix}_snps".{bed,bim,fam}
 }
 
+
+# Single REGENIE step-2 call for the conditional analysis.
+#
+# Args: TR PHENO THRESH CONDITION_FILE OUT_SUFFIX MIN_MAC
 run_regenie_step2_conditional() {
     local tr="$1" pheno="$2" thresh="$3"
     local condition_file="$4" out_suffix="$5" min_mac="$6"

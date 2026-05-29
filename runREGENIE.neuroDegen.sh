@@ -1,8 +1,10 @@
 #!/bin/bash
-# REGENIE burden association — neurodegen STRs (UKBB)
+# =============================================================================
+# UKBB REGENIE Association Analysis — Neurodegenerative STRs
+# =============================================================================
 # Gabrielle Altman
 #
-# Runs REGENIE step 1 + step 2 for TR expansion burden in UKBB WGS data.
+# Runs REGENIE step 1 + step 2 for TR expansion burden in UKBB WGS TR genotype data.
 # Binary trait, Firth approx correction. One submission per pheno x cutoff.
 # Similar script used in AoU with different covariates.
 #
@@ -13,6 +15,9 @@
 # HPC: bsub -P acc_PROJECTID -L /bin/bash -q premium -n 18 \
 #           -R rusage[mem=10000] -R span[hosts=1] -W 24:00 \
 #           bash runREGENIE.neuroDegen.sh neuroDegen Cutoff99
+#
+# Dependencies: regenie/3.4.1 (loaded via environment modules)
+# =============================================================================
 
 set -euo pipefail
 
@@ -77,6 +82,9 @@ COMMON_FLAGS=(
     --write-samples
 )
 
+# =============================================================================
+# Step 1 — Whole-genome regression (null model)
+# =============================================================================
 echo ""
 echo "Running step 1 ... $(date)"
 
@@ -87,6 +95,10 @@ regenie \
     --out            "${STEP1_PREFIX}"
 
 echo "Step 1 complete: $(date)"
+
+# =============================================================================
+# Step 2 — Association testing
+# =============================================================================
 
 echo ""
 echo "Running step 2 ... $(date)"
