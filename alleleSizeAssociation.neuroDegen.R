@@ -1,29 +1,40 @@
 # =============================================================================
-# UKBB Allele Size Association — Neurodegenerative Disease STR Analysis
+# Allele Size Association — Neurodegenerative Disease STR Analysis
 # =============================================================================
 # Description : For each tandem repeat (TR) locus that was nominally
-#               significant in the AoU+UKBB METAL meta-analysis, tests
-#               association between long-allele size (as a binary variable
-#               at each repeat-length cutoff >= the 99th percentile) and
+#               significant in a METAL meta-analysis, tests association
+#               between long-allele size (as a binary variable at each
+#               repeat-length cutoff >= the 99th percentile) and
 #               neurodegenerative disease status using Firth logistic
-#               regression (brglm). Run per chromosome.
+#               regression (brglm). Run per chromosome. Similar script 
+#               used to run this analysis in AoU with different covariates.
 #
-# Usage       : Rscript UKBB.alleleSizeAssociation.neuroDegen.R \
-#                   --dir  <main_dir> \
-#                   --cohort <phenotype> \
-#                   --chrom  <chromosome>
+# Usage       : Rscript alleleSizeAssociation.neuroDegen.R \
+#                   --dir        <main_dir> \
+#                   --cohort     <phenotype> \
+#                   --chrom      <chromosome> \
+#                   --pheno_file <path/to/phenotype_file.txt> \
+#                   --covar_file <path/to/covariates_file.tsv> \
+#                   --metal_file <path/to/metal_results.xlsx>
 #
 # Arguments   :
-#   --dir     Main project directory
-#   --cohort  Phenotype label: neuroDegen | neuroDegen_noPDorAD
-#   --chrom   Chromosome: chr1 ... chr22
+#   --dir        Main project directory
+#   --cohort     Phenotype label (e.g. neuroDegen | neuroDegen_noPDorAD)
+#   --chrom      Chromosome: chr1 ... chr22
+#   --pheno_file Path to phenotype file
+#   --covar_file Path to covariates file
+#   --metal_file Path to METAL results xlsx
 #
 # Example HPC submit:
 #   bsub -P <project> -L /bin/bash -q express -n 4 \
 #        -R span[hosts=1] -R rusage[mem=30000] -W 10:00 \
-#        Rscript UKBB.alleleSizeAssociation.neuroDegen.R \
-#            --dir /path/to/project/dir \
-#            --cohort neuroDegen --chrom chr12
+#        Rscript alleleSizeAssociation.neuroDegen.R \
+#            --dir        /path/to/project/dir \
+#            --cohort     neuroDegen \
+#            --chrom      chr12 \
+#            --pheno_file /path/to/phenos.txt \
+#            --covar_file /path/to/covariates.tsv \
+#            --metal_file /path/to/metal_results.xlsx
 #
 # Dependencies: tidyverse, data.table, scales, argparser, R.utils,
 #               readxl, parallel, brglm
@@ -50,20 +61,27 @@ suppressPackageStartupMessages({
 # =============================================================================
 
 p <- arg_parser("Per-allele-size association test for TR loci")
-p <- add_argument(p, "--dir",    help = "Main project directory [required]")
-p <- add_argument(p, "--cohort", help = "neuroDegen | neuroDegen_noPDorAD [required]")
-p <- add_argument(p, "--chrom",  help = "Chromosome, e.g. chr12 [required]")
+p <- add_argument(p, "--dir",        help = "Main project directory [required]")
+p <- add_argument(p, "--cohort",     help = "Phenotype label, e.g. neuroDegen [required]")
+p <- add_argument(p, "--chrom",      help = "Chromosome, e.g. chr12 [required]")
+p <- add_argument(p, "--pheno_file", help = "Path to phenotype file [required]")
+p <- add_argument(p, "--covar_file", help = "Path to covariates file [required]")
+p <- add_argument(p, "--metal_file", help = "Path to METAL results xlsx [required]")
 argv <- parse_args(p)
 
-if (is.na(argv$dir) || is.na(argv$cohort) || is.na(argv$chrom)) {
+if (is.na(argv$dir) || is.na(argv$cohort) || is.na(argv$chrom) ||
+    is.na(argv$pheno_file) || is.na(argv$covar_file) || is.na(argv$metal_file)) {
   print(p)
-  stop("ERROR: --dir, --cohort, and --chrom are all required.", call. = FALSE)
+  stop("ERROR: --dir, --cohort, --chrom, --pheno_file, --covar_file, and --metal_file are all required.", call. = FALSE)
 }
 
 cat("\nArguments:\n")
-cat("  --dir    :", argv$dir,    "\n")
-cat("  --cohort :", argv$cohort, "\n")
-cat("  --chrom  :", argv$chrom,  "\n\n")
+cat("  --dir        :", argv$dir,        "\n")
+cat("  --cohort     :", argv$cohort,     "\n")
+cat("  --chrom      :", argv$chrom,      "\n")
+cat("  --pheno_file :", argv$pheno_file, "\n")
+cat("  --covar_file :", argv$covar_file, "\n")
+cat("  --metal_file :", argv$metal_file, "\n\n")
 
 
 setwd(argv$dir)
@@ -72,15 +90,12 @@ setwd(argv$dir)
 # Configuration — edit these paths to adapt the script to your environment
 # =============================================================================
 
-EH_DIR    <- "/path/to/EH/genotypes/PerChrGT_FilteredEUR_AfterPCA"
-COVAR_DIR <- "/path/to/covariates"
-META_DIR  <- file.path(argv$dir, "metaAnalysis/neuroDegen/AoU_UKBB")
-OUT_DIR   <- file.path(argv$dir, "alleleSizeAssociation")
+EH_DIR  <- "/path/to/EH/genotypes/PerChrGT_FilteredEUR_AfterPCA"
+OUT_DIR <- file.path(argv$dir, "alleleSizeAssociation")
 
-PHENO_FILE  <- file.path(argv$dir, paste0("UKBB.phenos.", argv$cohort, ".txt"))
-COVAR_FILE  <- file.path(COVAR_DIR, "UKB500k_EUR_UnrelSampleListToIncludeAfterClassifierQc_Covar.tsv")
-METAL_FILE  <- file.path(META_DIR,  paste0("AoU.UKBB.", argv$cohort,
-                           ".METAL.results.nominallySignificant.filtered.xlsx"))
+PHENO_FILE <- argv$pheno_file
+COVAR_FILE <- argv$covar_file
+METAL_FILE <- argv$metal_file
 
 LONGALLELE_SC     <- file.path(EH_DIR, "SC/LongAlleleMatrix",
                                 paste0(argv$chrom, "_SC_EUR_LongAlleleMatrix.tsv.gz"))
@@ -217,37 +232,39 @@ test_locus <- function(marker) {
     return(NULL)
   }
 
-  lmdf <- do.call(rbind, lapply(alleles, make_allele_bins, df = df))
-
-  count_summary <- lmdf %>%
-    group_by(RepeatSize) %>%
-    summarise(
-      CaseLargeRepeat    = sum(Phenotype == 1 & RepeatStatus == 1),
-      ControlLargeRepeat = sum(Phenotype == 0 & RepeatStatus == 1),
-      CaseSmallRepeat    = sum(Phenotype == 1 & RepeatStatus == 0),
-      ControlSmallRepeat = sum(Phenotype == 0 & RepeatStatus == 0),
-      .groups = "drop"
+  # Compute counts + regression per allele in one pass — avoids stacking N full
+  # copies of df into a single frame and re-scanning it N times inside mclapply.
+  results_per_allele <- parallel::mclapply(alleles, function(len) {
+    dt <- make_allele_bins(len, df)
+    counts <- data.frame(
+      RepeatSize         = len,
+      CaseLargeRepeat    = sum(dt$Phenotype == 1 & dt$RepeatStatus == 1),
+      ControlLargeRepeat = sum(dt$Phenotype == 0 & dt$RepeatStatus == 1),
+      CaseSmallRepeat    = sum(dt$Phenotype == 1 & dt$RepeatStatus == 0),
+      ControlSmallRepeat = sum(dt$Phenotype == 0 & dt$RepeatStatus == 0)
     )
-
-  regression_results <- parallel::mclapply(alleles, function(len) {
-    tryCatch(
-      run_binary_regression(len, lmdf[lmdf$RepeatSize == len, ]),
+    reg <- tryCatch(
+      run_binary_regression(len, dt),
       error = function(e) {
         message("  Error at cutoff ", len, ": ", e$message)
         NULL
       }
     )
+    if (is.null(reg)) return(NULL)
+    cbind(
+      rename(reg, RepeatSize = repeatLen),
+      counts[, c("CaseLargeRepeat", "ControlLargeRepeat",
+                 "CaseSmallRepeat", "ControlSmallRepeat")]
+    )
   }, mc.cores = N_CORES)
 
-  valid_results <- Filter(Negate(is.null), regression_results)
+  valid_results <- Filter(Negate(is.null), results_per_allele)
   if (length(valid_results) == 0) {
     message("  No valid regression results for locus ", marker, " — skipping.")
     return(NULL)
   }
 
   assoc <- do.call(rbind, valid_results) %>%
-    rename(RepeatSize = repeatLen) %>%
-    inner_join(count_summary, by = "RepeatSize") %>%
     filter(!is.infinite(LR_OddsRatio), LR_OddsRatio != 0) %>%
     mutate(Locus = marker)
 
@@ -289,9 +306,9 @@ cat("Association testing complete.\n\n")
 # Save results
 # =============================================================================
 
-all_file  <- file.path(OUT_DIR, paste0("UKBB.", argv$chrom, ".", argv$cohort,
+all_file  <- file.path(OUT_DIR, paste0(argv$cohort, ".", argv$chrom,
                          ".alleleSizeAssociation.AllResults.txt.gz"))
-best_file <- file.path(OUT_DIR, paste0("UKBB.", argv$chrom, ".", argv$cohort,
+best_file <- file.path(OUT_DIR, paste0(argv$cohort, ".", argv$chrom,
                          ".alleleSizeAssociation.BestResults.txt.gz"))
 
 fwrite(all_table,  all_file,  sep = "\t", row.names = FALSE)
