@@ -165,9 +165,8 @@ Input genotype and phenotype data are derived from UK Biobank (UKBB) and the *Al
 
 ## Authors
 
-Gabrielle Altman, Bharati Jadhav, Paras Garg, Celine Manigbas — Icahn School of Medicine at Mount Sinai.
+Gabrielle Altman, Bharati Jadhav, Paras Garg, Alejandro Martin-Trujillo, Celine Manigbas, Mariya Shadrina, William Lee — Icahn School of Medicine at Mount Sinai.
 
-Adapted in part from code by Bharati Jadhav.
 
 ---
 

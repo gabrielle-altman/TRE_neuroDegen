@@ -1,6 +1,6 @@
 # TR Causal Variant Analysis (AoU)
 
-End-to-end pipeline for fine-mapping (CAVIAR) and conditional analysis (REGENIE) of tandem-repeat / trait pairs in *All of Us*. Designed to run inside a Jupyter notebook on the AoU Researcher Workbench.
+End-to-end pipeline for fine-mapping (CAVIAR) and conditional analysis (REGENIE) of tandem-repeat / trait pairs in *All of Us*. Designed to run inside a Jupyter notebook on the AoU Researcher Workbench. Similar pipeline used in UKBB.
 
 ## Layout
 

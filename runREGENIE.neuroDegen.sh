@@ -1,39 +1,20 @@
 #!/bin/bash
-# =============================================================================
-# UKBB REGENIE Association Analysis — Neurodegenerative Disease STR Analysis
-# =============================================================================
-# Description : Runs REGENIE (step 1 + step 2) for tandem repeat (TR)
-#               expansion burden association testing in UK Biobank WGS data.
-#               Binary trait logistic regression with Firth correction.
-#               Designed to be submitted per phenotype and expansion cutoff. 
-#               Similar script used to run REGENIE in AoU with different covariates
+# REGENIE burden association — neurodegen STRs (UKBB)
+# Gabrielle Altman
 #
-# Usage       : bsub [options] bash UKBB.runREGENIE.neuroDegen.sh \
-#                   <PHENO> <THRESHOLD>
+# Runs REGENIE step 1 + step 2 for TR expansion burden in UKBB WGS data.
+# Binary trait, Firth approx correction. One submission per pheno x cutoff.
+# Similar script used in AoU with different covariates.
 #
-# Arguments   :
-#   PHENO       Phenotype name matching phenotype file and column
-#               e.g. neuroDegen | neuroDegen_noPDorAD
-#   THRESHOLD   Expansion cutoff label matching input file names
-#               e.g. Cutoff95 | Cutoff98 | Cutoff99 | Cutoff995 |
-#                    Cutoff998 | Cutoff999 | Cutoff9995
+# Usage: bash runREGENIE.neuroDegen.sh <PHENO> <THRESHOLD>
+#   PHENO      e.g. neuroDegen | neuroDegen_noPDorAD
+#   THRESHOLD  e.g. Cutoff95 | Cutoff99 | Cutoff9995
 #
-# Example HPC submit:
-#   bsub -P acc_PROJECTID -L /bin/bash -q premium -n 18 \
-#        -R rusage[mem=10000] -R span[hosts=1] -W 24:00 \
-#        bash UKBB.runREGENIE.neuroDegen.sh neuroDegen Cutoff99
-#
-# Dependencies: regenie/3.4.1 (loaded via environment modules)
-#
-# Author      : Gabrielle Altman
-# Date        : July 2025
-# =============================================================================
+# HPC: bsub -P acc_PROJECTID -L /bin/bash -q premium -n 18 \
+#           -R rusage[mem=10000] -R span[hosts=1] -W 24:00 \
+#           bash runREGENIE.neuroDegen.sh neuroDegen Cutoff99
 
 set -euo pipefail
-
-# =============================================================================
-# Argument parsing and validation
-# =============================================================================
 
 if [[ $# -lt 2 ]]; then
   echo "ERROR: Missing required arguments." >&2
@@ -54,37 +35,16 @@ echo "  Threshold : ${THRESHOLD}"
 echo "  Type      : ${TYPE}"
 echo "======================================================"
 
-# =============================================================================
-# Environment
-# =============================================================================
-
 ml purge
 ml regenie/3.4.1
 
-# =============================================================================
-# Configuration — edit these paths to adapt the script to your environment
-# =============================================================================
-
-# Root directory containing WGS genotype data (plink2 .pgen/.psam/.pvar files)
+# paths — edit for your environment
 INDIR=/path/to/genotype_data
-
-# Output directory for REGENIE results
 OUTDIR=/path/to/output/${PHENO}_${THRESHOLD}
-
-# Plink2 binary TR genotype file prefix (no extension)
-# Expected: ${INDIR}/.../${THRESHOLD}/...BinVar.{pgen,psam,pvar}
 PGEN=${INDIR}/BinaryTR_Plink/${THRESHOLD}/Autosomes_${THRESHOLD}_BinaryGTForPhewas.BinVar
-
-# Phenotype file: tab-delimited, header row, columns FID/IID + phenotype column
 PHENO_FILE=/path/to/phenotypes/UKBB.phenos.${PHENO}.txt
-
-# Sample keep file: two-column FID/IID list of samples to include
 SAMPLE_FILE=/path/to/phenotypes/UKBB.samples.${PHENO}.txt
-
-# Covariate file: tab-delimited, header row, columns FID/IID + covariate columns
 COVAR_FILE=${INDIR}/UKB_EUR_Covar.tsv
-
-# TR variant ID list to extract (one variant ID per line)
 TR_LIST=/path/to/variant_lists/UKBB.keep.${THRESHOLD}.${PHENO}.txt
 
 COVAR_COLS=Insert_Size,Age,Age_sq,SNP_PC1,SNP_PC2,SNP_PC3,SNP_PC4,SNP_PC5
@@ -117,10 +77,6 @@ COMMON_FLAGS=(
     --write-samples
 )
 
-# =============================================================================
-# Step 1 — Whole-genome regression (null model)
-# =============================================================================
-
 echo ""
 echo "Running step 1 ... $(date)"
 
@@ -131,10 +87,6 @@ regenie \
     --out            "${STEP1_PREFIX}"
 
 echo "Step 1 complete: $(date)"
-
-# =============================================================================
-# Step 2 — Association testing
-# =============================================================================
 
 echo ""
 echo "Running step 2 ... $(date)"

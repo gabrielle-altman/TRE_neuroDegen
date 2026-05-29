@@ -1,33 +1,22 @@
 #!/usr/bin/env bash
-# common.sh
-# -----------------------------------------------------------------------------
-# Shared functions used by multiple pipeline steps. Source after config.sh:
-#     source ./config.sh
-#     source ./common.sh
-# -----------------------------------------------------------------------------
+# common.sh — shared functions for the TR causal variant pipeline
+# source after config.sh
 
-# --- iterate_pairs ---------------------------------------------------------
-# Reads TR_TRAIT_PAIRS and emits TAB-separated TR<TAB>THRESH<TAB>PHENO triples
-# on stdout. 
+# emit TR THRESH PHENO triples from TR_TRAIT_PAIRS
 iterate_pairs() {
     awk -F'\t' 'NR>1 && NF>=3 {print $1"\t"$2"\t"$3}' "$TR_TRAIT_PAIRS" | sort -u
 }
 
-# --- unique_trs ------------------------------------------------------------
 unique_trs() {
     awk -F'\t' 'NR>1 {print $1}' "$TR_TRAIT_PAIRS" | sort -u
 }
 
-# --- chroms_from_bed -------------------------------------------------------
-# Extract sorted unique chromosomes (without "chr" prefix) from a BED file.
 chroms_from_bed() {
     local bed="$1"
     awk '{sub(/^chr/,"",$1); print $1}' "$bed" | sort -u
 }
 
-# --- regenie_top_lines -----------------------------------------------------
-# Parse a REGENIE summary file by column NAME (not index) and emit
-# "<LOG10P> <ID> <BETA> <SE>" rows, skipping NA log10p entries.
+# parse REGENIE output by column name rather than index — handles column reordering
 regenie_top_lines() {
     local infile="$1"
     awk '
@@ -46,10 +35,7 @@ regenie_top_lines() {
     ' "$infile"
 }
 
-# --- fix_psam_header -------------------------------------------------------
-# PLINK2 writes psam files with a single "#IID" column when no family info
-# is present, which breaks REGENIE's expectation of "#FID IID". Rewrite the
-# psam in place, but ONLY if it doesn't already have a #FID column. 
+# plink2 writes "#IID" only when no family info; REGENIE needs "#FID IID"
 fix_psam_header() {
     local psam="$1"
     local header
@@ -64,14 +50,8 @@ fix_psam_header() {
     ' "$psam" > "${psam}.tmp" && mv "${psam}.tmp" "$psam"
 }
 
-# --- build_tr_snp_merged_pgen ----------------------------------------------
-# Build a merged PGEN of (TR genotype + locus SNPs) for a (TR, PHENO, THRESH)
-# triple, with samples present in BOTH the TR and SNP psam. 
-#
-# Args: TR PHENO THRESH OUT_PREFIX [SNP_EXTRACT_LIST]
-#   If SNP_EXTRACT_LIST is given, only those SNP IDs are kept from the locus
-#   PGEN before merging. (Fine-mapping wants the top-100 list; the
-#   conditional analysis wants all locus SNPs.)
+# merge TR pgen + locus SNP pgen, restricted to shared samples
+# optional 5th arg: SNP extract list (fine-mapping uses top-100; conditional uses all)
 build_tr_snp_merged_pgen() {
     local tr="$1" pheno="$2" thresh="$3" out_prefix="$4"
     local snp_extract_list="${5:-}"
@@ -118,14 +98,9 @@ build_tr_snp_merged_pgen() {
           --make-bed \
           --out "${out_prefix}_snps_TR"
 
-    # Remove per-source BED intermediates; callers use the merged _snps_TR set.
     rm -f "${out_prefix}_TR".{bed,bim,fam} "${out_prefix}_snps".{bed,bim,fam}
 }
 
-# --- run_regenie_step2_conditional -----------------------------------------
-# Single REGENIE step-2 call for the conditional analysis.
-#
-# Args: TR PHENO THRESH CONDITION_FILE OUT_SUFFIX MIN_MAC
 run_regenie_step2_conditional() {
     local tr="$1" pheno="$2" thresh="$3"
     local condition_file="$4" out_suffix="$5" min_mac="$6"

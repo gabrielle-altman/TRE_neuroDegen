@@ -1,46 +1,15 @@
-# =============================================================================
-# Allele Size Association — Neurodegenerative Disease STR Analysis
-# =============================================================================
-# Description : For each tandem repeat (TR) locus that was nominally
-#               significant in a METAL meta-analysis, tests association
-#               between long-allele size (as a binary variable at each
-#               repeat-length cutoff >= the 99th percentile) and
-#               neurodegenerative disease status using Firth logistic
-#               regression (brglm). Run per chromosome. Similar script 
-#               used to run this analysis in AoU with different covariates.
+# Allele size association — neurodegen STRs
+# Gabrielle Altman, adapted from code by Bharati Jadhav
 #
-# Usage       : Rscript alleleSizeAssociation.neuroDegen.R \
-#                   --dir        <main_dir> \
-#                   --cohort     <phenotype> \
-#                   --chrom      <chromosome> \
-#                   --pheno_file <path/to/phenotype_file.txt> \
-#                   --covar_file <path/to/covariates_file.tsv> \
-#                   --metal_file <path/to/metal_results.xlsx>
+# For each TR locus nominally significant in METAL, tests association between
+# long-allele size (binary at each cutoff >= 99th pctile) and disease status
+# using Firth logistic regression (brglm). Run per chromosome.
+# Similar script used in AoU with different covariates.
 #
-# Arguments   :
-#   --dir        Main project directory
-#   --cohort     Phenotype label (e.g. neuroDegen | neuroDegen_noPDorAD)
-#   --chrom      Chromosome: chr1 ... chr22
-#   --pheno_file Path to phenotype file
-#   --covar_file Path to covariates file
-#   --metal_file Path to METAL results xlsx
-#
-# Example HPC submit:
-#   bsub -P <project> -L /bin/bash -q express -n 4 \
-#        -R span[hosts=1] -R rusage[mem=30000] -W 10:00 \
-#        Rscript alleleSizeAssociation.neuroDegen.R \
-#            --dir        /path/to/project/dir \
-#            --cohort     neuroDegen \
-#            --chrom      chr12 \
-#            --pheno_file /path/to/phenos.txt \
-#            --covar_file /path/to/covariates.tsv \
-#            --metal_file /path/to/metal_results.xlsx
-#
-# Dependencies: tidyverse, data.table, scales, argparser, R.utils,
-#               readxl, parallel, brglm
-#
-# Author      : Gabrielle Altman, adapted from code by Bharati Jadhav
-# =============================================================================
+# Usage:
+#   Rscript alleleSizeAssociation.neuroDegen.R \
+#     --dir <dir> --cohort neuroDegen --chrom chr12 \
+#     --pheno_file phenos.txt --covar_file covars.tsv --metal_file metal.xlsx
 
 cat(paste0("R version: ", getRversion(), "\n"))
 cat("Loading libraries...\n")
@@ -56,9 +25,7 @@ suppressPackageStartupMessages({
   library(brglm)
 })
 
-# =============================================================================
-# Argument parsing and validation
-# =============================================================================
+## args
 
 p <- arg_parser("Per-allele-size association test for TR loci")
 p <- add_argument(p, "--dir",        help = "Main project directory [required]")
@@ -86,10 +53,7 @@ cat("  --metal_file :", argv$metal_file, "\n\n")
 
 setwd(argv$dir)
 
-# =============================================================================
-# Configuration — edit these paths to adapt the script to your environment
-# =============================================================================
-
+# paths — edit for your environment
 EH_DIR  <- "/path/to/EH/genotypes/PerChrGT_FilteredEUR_AfterPCA"
 OUT_DIR <- file.path(argv$dir, "alleleSizeAssociation")
 
@@ -111,10 +75,6 @@ N_CORES <- min(4L, parallel::detectCores() - 1L)
 
 dir.create(OUT_DIR, showWarnings = FALSE, recursive = TRUE)
 
-# =============================================================================
-# Load phenotypes, covariates, and target loci
-# =============================================================================
-
 cat("Loading phenotypes...\n")
 phenotypes <- fread(PHENO_FILE, sep = "\t", check.names = FALSE, header = TRUE) %>%
   select(-FID) %>%
@@ -131,10 +91,6 @@ target_loci <- read_excel(METAL_FILE) %>%
   select(Locus) %>%
   distinct()
 
-# =============================================================================
-# Load long-allele matrices and filter to target loci + phenotyped samples
-# =============================================================================
-
 cat("Loading long-allele matrices...\n")
 
 load_longallele <- function(filepath) {
@@ -149,10 +105,6 @@ load_longallele <- function(filepath) {
 
 df_SC     <- load_longallele(LONGALLELE_SC)
 df_deCODE <- load_longallele(LONGALLELE_DECODE)
-
-# =============================================================================
-# Load classifier predictions (Cutoff95) and filter out failed calls ("F")
-# =============================================================================
 
 cat("Loading classifier predictions...\n")
 
@@ -176,11 +128,8 @@ gc()
 
 eh$Locus <- as.character(eh$Locus)
 
-# =============================================================================
-# Functions
-# =============================================================================
+## helpers
 
-# For a given repeat-length threshold, categorize samples into expanded vs normal
 make_allele_bins <- function(repeat_len, df) {
   df %>% mutate(
     RepeatStatus = as.integer(LongAllele >= repeat_len),
@@ -188,7 +137,6 @@ make_allele_bins <- function(repeat_len, df) {
   )
 }
 
-# Firth logistic regression for one repeat-length cutoff
 run_binary_regression <- function(repeat_len, dt) {
   dt$Phenotype    <- relevel(factor(dt$Phenotype),    ref = "0")
   dt$RepeatStatus <- relevel(factor(dt$RepeatStatus), ref = "0")
@@ -220,7 +168,6 @@ run_binary_regression <- function(repeat_len, dt) {
   )
 }
 
-# Test all allele-size cutoffs >= 99th percentile for one locus
 test_locus <- function(marker) {
   message("Testing locus: ", marker)
   df      <- eh[eh$Locus == marker, ]
@@ -232,8 +179,6 @@ test_locus <- function(marker) {
     return(NULL)
   }
 
-  # Compute counts + regression per allele in one pass — avoids stacking N full
-  # copies of df into a single frame and re-scanning it N times inside mclapply.
   results_per_allele <- parallel::mclapply(alleles, function(len) {
     dt <- make_allele_bins(len, df)
     counts <- data.frame(
@@ -279,10 +224,6 @@ test_locus <- function(marker) {
   )
 }
 
-# =============================================================================
-# Run association tests across all loci
-# =============================================================================
-
 loci <- unique(eh$Locus)
 cat(paste0("Running association tests for ", length(loci), " loci...\n"))
 
@@ -301,10 +242,6 @@ all_table  <- do.call(rbind, lapply(res_list, `[[`, "all"))
 best_table <- do.call(rbind, lapply(res_list, `[[`, "best"))
 
 cat("Association testing complete.\n\n")
-
-# =============================================================================
-# Save results
-# =============================================================================
 
 all_file  <- file.path(OUT_DIR, paste0(argv$cohort, ".", argv$chrom,
                          ".alleleSizeAssociation.AllResults.txt.gz"))
