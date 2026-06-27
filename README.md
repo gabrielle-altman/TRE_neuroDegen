@@ -1,10 +1,7 @@
-# TRE_neuroDegen
+# Neurodegenerative disease TRE GWAS
 
-Scripts for tandem repeat expansion (TRE) association analysis in neurodegenerative disease, as described in:
 
-> *[manuscript citation to be added]*
-
-Two complementary analyses are included:
+Scripts included:
 
 1. **Allele-size association** (`alleleSizeAssociation.neuroDegen.R`) — per-locus Firth logistic regression testing association of varying expansion size cutoff (≥ 99th-percentile repeat length) with disease status, run on UKBB WGS TR genotype data. Similar script used in AoU.
 2. **Burden association via REGENIE** (`runREGENIE.neuroDegen.sh`) — genome-wide association test using REGENIE's two-step Firth approx logistic regression, applied to binary TR genotype data in UKBB. Similar script used in AoU.
@@ -99,7 +96,7 @@ bsub -P acc_PROJECTID -L /bin/bash -q express -n 4 \
 
 ---
 
-## 2 · REGENIE burden association (`runREGENIE.neuroDegen.sh`)
+## 2 · REGENIE for TRE GWAS (`runREGENIE.neuroDegen.sh`)
 
 ### What it does
 
