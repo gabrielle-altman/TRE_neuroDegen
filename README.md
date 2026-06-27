@@ -5,7 +5,7 @@ Scripts included:
 
 1. **Allele-size association** (`alleleSizeAssociation.neuroDegen.R`) — per-locus Firth logistic regression testing association of varying expansion size cutoff (≥ 99th-percentile repeat length) with disease status, run on UKBB WGS TR genotype data. Similar script used in AoU.
 2. **Burden association via REGENIE** (`runREGENIE.neuroDegen.sh`) — genome-wide association test using REGENIE's two-step Firth approx logistic regression, applied to binary TR genotype data in UKBB. Similar script used in AoU.
-3. **Causal variant analysis** (`casual_variant_analysis/`) — fine-mapping (CAVIAR) and conditional analysis (REGENIE) pipeline for identifying whether TR signals are independent of nearby SNPs, run in the *All of Us* Researcher Workbench. Similar pipeline used in UKBB.
+3. **Causal variant analysis** (`causal_variant_analysis/`) — fine-mapping (CAVIAR) and conditional analysis (REGENIE) pipeline for identifying whether TR signals are independent of nearby SNPs, run in the *All of Us* Researcher Workbench. Similar pipeline used in UKBB.
 
 ---
 
@@ -15,7 +15,7 @@ Scripts included:
 TRE_neuroDegen/
 ├── alleleSizeAssociation.neuroDegen.R          # Per-locus allele-size association (R)
 ├── runREGENIE.neuroDegen.sh                    # REGENIE burden association (bash)
-└── casual_variant_analysis/
+└── causal_variant_analysis/
     ├── TR_Causal_Variant_Analysis.ipynb        # End-to-end causal variant pipeline (Jupyter)
     ├── config.sh                               # All paths, binaries, covariate names
     ├── common.sh                               # Shared bash functions
@@ -143,9 +143,9 @@ bsub -P acc_PROJECTID -L /bin/bash -q premium -n 18 \
 
 ---
 
-## 3 · Causal variant analysis (`casual_variant_analysis/`)
+## 3 · Causal variant analysis (`causal_variant_analysis/`)
 
-See [`casual_variant_analysis/README.md`](casual_variant_analysis/README.md) for the full pipeline description.
+See [`causal_variant_analysis/README.md`](causal_variant_analysis/README.md) for the full pipeline description.
 
 Fine-mapping (CAVIAR) and conditional analysis (REGENIE) of TR/trait pairs to test whether TR associations are independent of nearby SNP signals. Designed to run inside a Jupyter notebook on the *All of Us* Researcher Workbench.
 
