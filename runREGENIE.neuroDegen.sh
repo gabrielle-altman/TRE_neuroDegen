@@ -1,10 +1,10 @@
 #!/bin/bash
 # =============================================================================
-# UKBB REGENIE Association Analysis — Neurodegenerative STRs
+# UKB REGENIE Association Analysis — Neurodegenerative STRs
 # =============================================================================
-# Gabrielle Altman
+# Gabrielle N. Altman
 #
-# Runs REGENIE step 1 + step 2 for TR expansion burden in UKBB WGS TR genotype data.
+# Runs REGENIE step 1 + step 2 for TR expansion in UKB WGS TR genotype data.
 # Binary trait, Firth approx correction. One submission per pheno x cutoff.
 # Similar script used in AoU with different covariates.
 #
@@ -12,9 +12,7 @@
 #   PHENO      e.g. neuroDegen | neuroDegen_noPDorAD
 #   THRESHOLD  e.g. Cutoff95 | Cutoff99 | Cutoff9995
 #
-# HPC: bsub -P acc_PROJECTID -L /bin/bash -q premium -n 18 \
-#           -R rusage[mem=10000] -R span[hosts=1] -W 24:00 \
-#           bash runREGENIE.neuroDegen.sh neuroDegen Cutoff99
+# Run on DNAnexus.
 #
 # Dependencies: regenie/3.4.1 (loaded via environment modules)
 # =============================================================================
@@ -47,10 +45,10 @@ ml regenie/3.4.1
 INDIR=/path/to/genotype_data
 OUTDIR=/path/to/output/${PHENO}_${THRESHOLD}
 PGEN=${INDIR}/BinaryTR_Plink/${THRESHOLD}/Autosomes_${THRESHOLD}_BinaryGTForPhewas.BinVar
-PHENO_FILE=/path/to/phenotypes/UKBB.phenos.${PHENO}.txt
-SAMPLE_FILE=/path/to/phenotypes/UKBB.samples.${PHENO}.txt
+PHENO_FILE=/path/to/phenotypes/UKB.phenos.${PHENO}.txt
+SAMPLE_FILE=/path/to/phenotypes/UKB.samples.${PHENO}.txt
 COVAR_FILE=${INDIR}/UKB_EUR_Covar.tsv
-TR_LIST=/path/to/variant_lists/UKBB.keep.${THRESHOLD}.${PHENO}.txt
+TR_LIST=/path/to/variant_lists/UKB.keep.${THRESHOLD}.${PHENO}.txt
 
 COVAR_COLS=Insert_Size,Age,Age_sq,SNP_PC1,SNP_PC2,SNP_PC3,SNP_PC4,SNP_PC5
 CAT_COVAR_COLS=Gender,SeqCenter

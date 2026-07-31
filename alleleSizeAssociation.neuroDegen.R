@@ -1,7 +1,7 @@
 # =============================================================================
 # Allele Size Association — Neurodegenerative STRs
 # =============================================================================
-# Gabrielle Altman, adapted from code by Bharati Jadhav
+# Gabrielle N. Altman, adapted from code by Bharati Jadhav
 #
 # For each TR locus nominally significant in METAL, tests association between
 # long-allele size (binary at each cutoff >= 99th percentile) and disease status
@@ -166,7 +166,7 @@ run_binary_regression <- function(repeat_len, dt) {
 
   fit <- try(
     brglm(Phenotype ~ RepeatStatus + SNP_PC1 + SNP_PC2 + SNP_PC3 + SNP_PC4 + SNP_PC5 +
-            Age + Insert_Size + predicted_gender + SeqCenter,
+            Age + Age_sq + Insert_Size + predicted_gender + SeqCenter,
           data = dt, family = binomial, pl = TRUE),
     silent = TRUE
   )

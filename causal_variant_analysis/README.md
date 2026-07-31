@@ -1,6 +1,6 @@
 # TR Causal Variant Analysis (AoU)
 
-End-to-end pipeline for fine-mapping (CAVIAR) and conditional analysis (REGENIE) of tandem-repeat / trait pairs in *All of Us*. Designed to run inside a Jupyter notebook on the AoU Researcher Workbench. Similar pipeline used in UKBB.
+End-to-end pipeline for fine-mapping (CAVIAR) and conditional analysis (REGENIE) of tandem-repeat / trait pairs in *All of Us*. Designed to run inside a Jupyter notebook on the AoU Researcher Workbench. Similar pipeline used in UKB.
 
 ## Layout
 
@@ -47,8 +47,8 @@ The cells are numbered 00–14 and can be re-run independently as long as their 
 - The pipeline is binary-only (`TYPE=Binary`)
 - `--minMAC` differs between the two conditional step-2 cells (2 for SNP, 5 for TR) — see comments in cell 14.
 - The `%%bash` cells use `set -euo pipefail` (via `config.sh`) so any plink2/REGENIE failure aborts the cell instead of silently producing empty output.
-- Similar pipeline was used in UKBB
+- Similar pipeline was used in UKB
 
 ## Authors
 
-Gabrielle Altman, Bharati Jadhav, Paras Garg, Celine Manigbas — Icahn School of Medicine at Mount Sinai.
+Gabrielle N. Altman, Bharati Jadhav, Paras Garg, Celine A. Manigbas — Icahn School of Medicine at Mount Sinai.
