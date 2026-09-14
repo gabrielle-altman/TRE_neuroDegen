@@ -1,5 +1,8 @@
 # Neurodegenerative disease TRE association analysis
 
+This code is part of the following preprint:
+
+> Altman GN, Jadhav B, Garg P, Shadrina M, Manigbas CA, Lee W, Kandoi S, Martin-Trujillo A, Sharp AJ. **Tandem repeat expansions in *DAPK1*, *ANK3*, and *RPL14* are associated with diverse neurodegenerative diseases.** medRxiv 2026.08.06.26358503; doi: [10.64898/2026.08.06.26358503](https://doi.org/10.64898/2026.08.06.26358503) *(currently under review)*
 
 Scripts included, in the order the corresponding analyses appear in the Methods:
 
@@ -460,7 +463,7 @@ Input genotype and phenotype data are derived from UK Biobank (UKB), the *All of
 
 ## Authors
 
-Gabrielle N. Altman, Bharati Jadhav, Paras Garg, Alejandro Martin-Trujillo, Celine A. Manigbas, Mariya Shadrina, William Lee — Icahn School of Medicine at Mount Sinai.
+Gabrielle N. Altman, Bharati Jadhav, Paras Garg, Mariya Shadrina, Celine A. Manigbas, William Lee, Shrishtee Kandoi, Alejandro Martin-Trujillo, Andrew J. Sharp — Icahn School of Medicine at Mount Sinai.
 
 
 ---
