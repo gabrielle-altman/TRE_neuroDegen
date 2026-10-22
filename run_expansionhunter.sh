@@ -12,7 +12,7 @@
 #   INPUT_CRAM      Path to input CRAM file
 #   INPUT_RefFasta  Path to GRCh38 reference genome FASTA
 #   INPUT_STRs      Path to ExpansionHunter variant catalog (JSON)
-#                   Catalog used in this study: TRE_neuroDegen_catalog.json (this repository)
+#                   Catalog used in this study: ExpansionHunter_TRCatalog_NeuroDegen_16871loci_hg38.json (this repository)
 #   gender          Sample sex (male/female), used for sex chromosome genotyping
 #   sampleName      Sample identifier used for output file naming
 #
