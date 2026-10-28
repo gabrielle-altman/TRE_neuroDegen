@@ -2,17 +2,18 @@
 
 This code is part of the following preprint:
 
-> Altman GN, Jadhav B, Garg P, Shadrina M, Manigbas CA, Lee W, Kandoi S, Martin-Trujillo A, Sharp AJ. **Tandem repeat expansions in *DAPK1*, *ANK3*, and *RPL14* are associated with diverse neurodegenerative diseases.** medRxiv 2026.08.06.26358503; doi: [10.64898/2026.08.06.26358503](https://doi.org/10.64898/2026.08.06.26358503) *(currently under review)*
+> Altman GN, Jadhav B, Garg P, Shadrina M, Manigbas CA, Lee W, Kandoi S, Martin-Trujillo A, Sharp AJ. **Tandem repeat expansions in *DAPK1*, *ANK3*, and *RPL14* are associated with diverse neurodegenerative diseases.** medRxiv 2026.08.06.26358503; doi: [10.64898/2026.08.06.26358503](https://doi.org/10.64898/2026.08.06.26358503) *(currently under revision)*
 
 Scripts included, in the order the corresponding analyses appear in the Methods:
 
-1. **TR expansion association via REGENIE** (`runREGENIE.neuroDegen.sh`) — association test using REGENIE's two-step Firth approx logistic regression, applied to binary TR genotype data in UKB. Similar script used in AoU.
-2. **Cross-cohort meta-analysis via METAL** (`runMETAL.neuroDegen.sh`) — fixed-effects meta-analysis of REGENIE association results across cohorts (e.g. AoU + UKB).
-3. **Allele-size association** (`alleleSizeAssociation.neuroDegen.R`) — per-locus Firth logistic regression testing association of varying expansion size cutoff (≥ 99th-percentile repeat length) with disease status, run on UKB WGS TR genotype data. Similar script used in AoU.
-4. **Causal variant analysis** (`causal_variant_analysis/`) — fine-mapping (CAVIAR) and conditional analysis (REGENIE) pipeline for identifying whether TR signals are independent of nearby SNPs, run in the *All of Us* Researcher Workbench. Similar pipeline used in UKB.
-5. **GTEx TR-eQTL analysis** (`GTEx.eQTLAssociation.neuroDegen.R`) — per-tissue expression residualization and long-allele eQTL testing (host gene + window scan) in GTEx v8, with cross-tissue meta-analysis.
-6. **MESA TR-eQTL analysis** (`MESA.eQTLAssociation.neuroDegen.R`) — per-tissue (Monocytes, PBMCs, T-cells) expression residualization and long-allele eQTL testing (host gene + window scan) in MESA.
-7. **AMP-PD TR-eQTL analysis** (`AMPPD.eQTLAssociation.neuroDegen.R`) — single-tissue (blood) expression residualization and long-allele eQTL testing (host gene + window scan) in AMP-PD.
+1. **STR genotyping via ExpansionHunter** (`run_expansionhunter.sh`) — per-sample STR genotyping from CRAM files using ExpansionHunter v5.0.0, run on DNAnexus (UKB) and the *All of Us* Researcher Workbench (AoU), against the variant catalog `ExpansionHunter_TRCatalog_NeuroDegen_16871loci_hg38.json` (this repository).
+2. **TR expansion association via REGENIE** (`runREGENIE.neuroDegen.sh`) — association test using REGENIE's two-step Firth approx logistic regression, applied to binary TR genotype data in UKB. Similar script used in AoU.
+3. **Cross-cohort meta-analysis via METAL** (`runMETAL.neuroDegen.sh`) — fixed-effects meta-analysis of REGENIE association results across cohorts (e.g. AoU + UKB).
+4. **Allele-size association** (`alleleSizeAssociation.neuroDegen.R`) — per-locus Firth logistic regression testing association of varying expansion size cutoff (≥ 99th-percentile repeat length) with disease status, run on UKB WGS TR genotype data. Similar script used in AoU.
+5. **Causal variant analysis** (`causal_variant_analysis/`) — fine-mapping (CAVIAR) and conditional analysis (REGENIE) pipeline for identifying whether TR signals are independent of nearby SNPs, run in the *All of Us* Researcher Workbench. Similar pipeline used in UKB.
+6. **GTEx TR-eQTL analysis** (`GTEx.eQTLAssociation.neuroDegen.R`) — per-tissue expression residualization and long-allele eQTL testing (host gene + window scan) in GTEx v8, with cross-tissue meta-analysis.
+7. **MESA TR-eQTL analysis** (`MESA.eQTLAssociation.neuroDegen.R`) — per-tissue (Monocytes, PBMCs, T-cells) expression residualization and long-allele eQTL testing (host gene + window scan) in MESA.
+8. **AMP-PD TR-eQTL analysis** (`AMPPD.eQTLAssociation.neuroDegen.R`) — single-tissue (blood) expression residualization and long-allele eQTL testing (host gene + window scan) in AMP-PD.
 
 ---
 
@@ -20,6 +21,8 @@ Scripts included, in the order the corresponding analyses appear in the Methods:
 
 ```
 TRE_neuroDegen/
+├── run_expansionhunter.sh                      # STR genotyping via ExpansionHunter (bash)
+├── ExpansionHunter_TRCatalog_NeuroDegen_16871loci_hg38.json  # ExpansionHunter variant catalog (16,871 loci, hg38)
 ├── runREGENIE.neuroDegen.sh                    # TR expansion association via REGENIE (bash)
 ├── runMETAL.neuroDegen.sh                      # Cross-cohort METAL meta-analysis (bash)
 ├── alleleSizeAssociation.neuroDegen.R          # Per-locus allele-size association (R)
@@ -35,7 +38,37 @@ TRE_neuroDegen/
 
 ---
 
-## 1 · TR expansion association via REGENIE (`runREGENIE.neuroDegen.sh`)
+## 1 · STR genotyping via ExpansionHunter (`run_expansionhunter.sh`)
+
+### What it does
+
+Runs ExpansionHunter v5.0.0 on a single sample CRAM file to genotype short tandem repeat loci, using the variant catalog `ExpansionHunter_TRCatalog_NeuroDegen_16871loci_hg38.json` (16,871 loci, hg38; included in this repository). Run once per sample on DNAnexus (UKB) and the *All of Us* Researcher Workbench (AoU).
+
+### Usage
+
+```bash
+bash run_expansionhunter.sh <INPUT_CRAM> <INPUT_RefFasta> <INPUT_STRs> <gender> <sampleName>
+```
+
+| Argument | Description |
+|---|---|
+| `INPUT_CRAM` | Path to input CRAM file |
+| `INPUT_RefFasta` | Path to GRCh38 reference genome FASTA |
+| `INPUT_STRs` | Path to ExpansionHunter variant catalog (JSON) — `ExpansionHunter_TRCatalog_NeuroDegen_16871loci_hg38.json` in this repository |
+| `gender` | Sample sex (`male`/`female`), used for sex chromosome genotyping |
+| `sampleName` | Sample identifier used for output file naming |
+
+### Output
+
+Written to `<sampleName>.EHv5.0.0.*` (VCF, JSON, and BAMlet, per ExpansionHunter's standard output naming).
+
+### Dependencies
+
+`ExpansionHunter/5.0.0`
+
+---
+
+## 2 · TR expansion association via REGENIE (`runREGENIE.neuroDegen.sh`)
 
 ### What it does
 
@@ -76,7 +109,7 @@ Run on DNAnexus.
 
 ---
 
-## 2 · Cross-cohort meta-analysis via METAL (`runMETAL.neuroDegen.sh`)
+## 3 · Cross-cohort meta-analysis via METAL (`runMETAL.neuroDegen.sh`)
 
 ### What it does
 
@@ -125,7 +158,7 @@ bsub -P acc_PROJECTID -L /bin/bash -q express -n 1 \
 
 ---
 
-## 3 · Allele-size association (`alleleSizeAssociation.neuroDegen.R`)
+## 4 · Allele-size association (`alleleSizeAssociation.neuroDegen.R`)
 
 ### What it does
 
@@ -185,7 +218,7 @@ Run on DNAnexus.
 
 ---
 
-## 4 · Causal variant analysis (`causal_variant_analysis/`)
+## 5 · Causal variant analysis (`causal_variant_analysis/`)
 
 See [`causal_variant_analysis/README.md`](causal_variant_analysis/README.md) for the full pipeline description.
 
@@ -193,11 +226,11 @@ Fine-mapping (CAVIAR) and conditional analysis (REGENIE) of TR/trait pairs to te
 
 ---
 
-## 5 · GTEx TR-eQTL analysis (`GTEx.eQTLAssociation.neuroDegen.R`)
+## 6 · GTEx TR-eQTL analysis (`GTEx.eQTLAssociation.neuroDegen.R`)
 
 ### What it does
 
-Per-tissue expression residualization followed by long-allele association testing at host genes and genes within a window of each TR locus, with cross-tissue meta-analysis. Approach inspired by the GTEx TR-eQTL analysis in Manigbas et al. 2024 Nat Commun. A similar script was used for the MESA and AMP-PD gene-expression association analyses (§6, §7), with the following differences in how expression was processed: in GTEx, pre-processed `normalized_expression.bed` files were residualized on sex, median insert size, sequencer, genotyping principal components, and PEER factors; in MESA, raw TPM values were INT-transformed within the analysis and residualized on sex, median insert size, age, analyte isolation batch, and predicted ancestry; in AMP-PD, raw normalized counts were likewise INT-transformed within the analysis and residualized on sex, age, cohort (study of origin), median insert size, and five genotyping principal components.
+Per-tissue expression residualization followed by long-allele association testing at host genes and genes within a window of each TR locus, with cross-tissue meta-analysis. Approach inspired by the GTEx TR-eQTL analysis in Manigbas et al. 2024 Nat Commun. A similar script was used for the MESA and AMP-PD gene-expression association analyses (§7, §8), with the following differences in how expression was processed: in GTEx, pre-processed `normalized_expression.bed` files were residualized on sex, median insert size, sequencer, genotyping principal components, and PEER factors; in MESA, raw TPM values were INT-transformed within the analysis and residualized on sex, median insert size, age, analyte isolation batch, and predicted ancestry; in AMP-PD, raw normalized counts were likewise INT-transformed within the analysis and residualized on sex, age, cohort (study of origin), median insert size, and five genotyping principal components.
 
 - **Per tissue**: loads GTEx's normalized expression matrix and covariates file (every covariate column used, no manual selection), joins AGE/SEX from the subject phenotype file and an optional insert-size covariate, then residualizes each needed gene's expression against all covariates.
 - **Per (locus, gene, tissue)**: expands each TR locus ± a window and overlaps it against a gene annotation BED to build host-gene and window-gene candidate pairs, then tests `lm(residual ~ long_allele_length)` for each pair.
@@ -285,11 +318,11 @@ bsub -P acc_PROJECTID -q premium -W 10:00 -n 8 \
 
 ---
 
-## 6 · MESA TR-eQTL analysis (`MESA.eQTLAssociation.neuroDegen.R`)
+## 7 · MESA TR-eQTL analysis (`MESA.eQTLAssociation.neuroDegen.R`)
 
 ### What it does
 
-Per-tissue (Monocytes, PBMCs, T-cells) expression residualization followed by long-allele association testing at host genes and genes within a window of each TR locus. Part of the same cis-eQTL analysis as the GTEx and AMP-PD scripts (§5, §7); see §5 for how expression processing differs across the three cohorts.
+Per-tissue (Monocytes, PBMCs, T-cells) expression residualization followed by long-allele association testing at host genes and genes within a window of each TR locus. Part of the same cis-eQTL analysis as the GTEx and AMP-PD scripts (§6, §8); see §6 for how expression processing differs across the three cohorts.
 
 - **Per tissue**: rank-based inverse-normal transform (INT) each needed gene's TPM, then residualizes on sex, analyte isolation batch, and predicted ancestry. Genes are only tested in a tissue if median TPM there clears `--MinTPM`.
 - **Per (locus, gene, tissue)**: expands each TR locus ± a window and overlaps it against a gene annotation BED to build host-gene and window-gene candidate pairs, then tests `lm(residual ~ long_allele_length)` for each pair. A leverage check refits after dropping the single largest-allele sample (`beta_drop_top` / `p_drop_top` / `delta_beta_drop_top`).
@@ -373,11 +406,11 @@ bsub -P acc_PROJECTID -q premium -W 10:00 -R "span[hosts=1]" -R "rusage[mem=6000
 
 ---
 
-## 7 · AMP-PD TR-eQTL analysis (`AMPPD.eQTLAssociation.neuroDegen.R`)
+## 8 · AMP-PD TR-eQTL analysis (`AMPPD.eQTLAssociation.neuroDegen.R`)
 
 ### What it does
 
-Expression residualization (blood RNA-seq, single tissue) followed by long-allele association testing at host genes and genes within a window of each TR locus. Part of the same cis-eQTL analysis as the GTEx and MESA scripts (§5, §6).
+Expression residualization (blood RNA-seq, single tissue) followed by long-allele association testing at host genes and genes within a window of each TR locus. Part of the same cis-eQTL analysis as the GTEx and MESA scripts (§6, §7).
 
 - Rank-based inverse-normal transform (INT) each needed gene's raw normalized expression, then residualizes on cohort, sex, age, median insert size, and genotyping principal components.
 - **Per (locus, gene)**: expands each TR locus ± a window and overlaps it against a gene annotation BED to build host-gene and window-gene candidate pairs, then tests `lm(residual ~ long_allele_length)` for each pair. A leverage check refits after dropping the single largest-allele sample (`beta_drop_top` / `p_drop_top` / `delta_beta_drop_top`).
